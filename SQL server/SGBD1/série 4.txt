@@ -1,0 +1,102 @@
+use  Serie4;
+create table Fournisseur (NumF smallint primary key identity, nom varchar(20), ville varchar(25)) 
+create table Produit (CodeP smallint primary key identity, libellé varchar(30), stock varchar(30), prixVente float , villeOrigine varchar(25)) 
+create table Fourniture (NumF smallint  foreign key references Fournisseur(NumF), CodeP smallint  foreign key references Produit(CodeP), quantité smallint, prixAchat float, dateLivraison datetime, primary key (NumF,CodeP))
+
+ALTER TABLE PRODUIT
+ALTER COLUMN stock decimal
+
+select * from Fournisseur
+select * from Produit
+select * from Fourniture
+--1--
+select F.Nom,F.NumF from Fournisseur F inner join Fourniture FN on F.NumF =FN.NumF  group by F.Nom,F.NumF having count(distinct codeP)=1
+--2--
+select F.NumF  from Fourniture F  where CodeP!=2   group by F.NumF having  count(*)=(select count(*) from Fourniture where NumF=F.NumF)
+
+select distinct F.NumF  from Fourniture F  where 2 not in  (select CodeP from  Fourniture where NumF = F.NumF  )
+
+--3--
+select F.NumF,F.nom  from Fournisseur F inner join Fourniture FN on F.NumF =FN.NumF where FN.CodeP=2   group by F.NumF,F.nom having count(*)=(select count(*) from Fourniture where NumF=F.NumF)
+
+select F.NumF,F.nom  from Fournisseur F  where F.NumF in  (select NumF from  Fourniture where CodeP = 2  group by NumF having count(*) = (select count(*) from Fourniture where NumF=F.NumF) )
+
+--4--
+select  Nom,F.NumF From Fournisseur F where F.NumF not in (select NumF from Fourniture)
+--5--
+select distinct fn.NumF from Fourniture fn inner join Produit p on fn.CodeP = p.CodeP where p.villeOrigine='oujda'
+----------------------------------------------------------------------------------------------
+select  Nom,F.NumF from Fournisseur F inner join Fourniture FN on F.NumF =FN.NumF inner join Produit P on FN.CodeP=P.CodeP where P.villeOrigine ='OUJDA'
+
+--6--
+select distinct F.nom,F.ville  from Fournisseur F inner join Fourniture FN on F.NumF =FN.NumF inner join Produit p on p.CodeP=FN.CodeP where p.villeOrigine=f.ville
+--7--
+select codeP ,libellé from Produit where stock>10
+--8--
+select count(*) from produit
+--9--
+select * from produit where prixVente in(select max(prixVente)from produit)
+--10--
+select * from produit where prixVente in(select min(prixVente)from produit)
+--11--
+select avg(prixVente) from produit 
+--12--
+select * from produit where prixVente >(select avg(prixVente) from produit)
+--13--
+select * from produit where prixVente between 5 and 15
+--14--
+select * from Fournisseur where nom like'li%'
+--15--
+select * from produit
+select codeP ,libellé ,stock from Produit order by stock desc
+select codeP ,libellé ,stock from produit order by stock asc
+--16--
+select FN.codeP ,libellé ,max (FN.prixAchat),min (FN.prixAchat) from Fourniture FN inner join Produit P on P.CodeP=FN.CodeP group by FN.codeP ,libellé
+--17--
+----------------------(1)
+select p.codeP, p.libellé, fn.NumF, fn.prixAchat from Fourniture fn inner join Produit p on p.CodeP=fn.CodeP WHERE prixAchat = (select min (f.prixAchat) from Fourniture f WHERE f.CodeP = fn.codeP)
+group by p.codeP,p.libellé, fn.NumF, fn.prixAchat
+----------------------(2)
+select p.codeP, p.libellé, fn.NumF, fn.prixAchat from Fourniture fn inner join Produit p on p.CodeP=fn.CodeP
+group by p.codeP,p.libellé, fn.NumF, fn.prixAchat having fn.prixAchat = (select min (f.prixAchat) from Fourniture f WHERE f.CodeP = p.codeP)
+------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------(1)
+select p.codeP, p.libellé from Fourniture fn inner join Produit p on p.CodeP=fn.CodeP
+group by p.codeP,p.libellé having min(fn.prixAchat) = (select min (Fourniture.prixAchat) from Fourniture )
+----------------------(2)
+select distinct p.codeP, p.libellé from Fourniture fn inner join Produit p on p.CodeP=fn.CodeP
+where fn.prixAchat = (select min (Fourniture.prixAchat) from Fourniture )
+--18--
+select * from Fournisseur where NumF in (select NumF from Fourniture where dateLivraison in(select max(dateLivraison) from Fourniture ))
+--19--
+select sum(prixAchat)as' montant total' from Fourniture
+--20--
+select sum(prixAchat)as' montant total' from Fourniture where MONTH(dateLivraison) = 12
+--21--
+select FN.NumF,F.nom , sum(prixAchat)as' montant total' from Fourniture FN inner join Fournisseur F on F.NumF=FN.NumF group by FN.NumF,F.nom 
+--22--
+select F.NumF,F.nom from Fourniture FN inner join Fournisseur F on F.NumF=FN.NumF group by F.NumF,f.nom having count(distinct FN.CodeP)=(select count(*) from Produit)
+
+
+--*****************************************************************************************************************************************************************************************************
+create table ETUDIANT (NumEtudiant smallint primary key identity, Nom varchar(20), Prénom varchar(20)) 
+create table MATIERE (NumMat smallint primary key identity, LibelléMat varchar(20), CoeffMat decimal) 
+create table EVALUER (NumEtudiant smallint foreign key references ETUDIANT(NumEtudiant) , NumMat smallint foreign key references MATIERE (NumMat), Datte datetime, Note float,primary key (NumEtudiant,NumMat))
+
+select * from EVALUER
+select * from MATIERE
+select * from ETUDIANT
+--1--
+select count(numEtudiant) from ETUDIANT
+--2--
+select max(Note) ,min(Note) from EVALUER
+--3--
+select NumEtudiant,NumMat, AVG( Note )from EVALUER group by NumEtudiant,NumMat
+--4--
+select NumMat, AVG( Note )from EVALUER group by NumMat
+--5--
+select NumEtudiant, sum(moyenne*CoeffMat)/sum(CoeffMat) from vmoy inner join MATIERE on vmoy.NumMat = MATIERE.NumMat group by NumEtudiant
+--6--
+select sum(moyenne)/COUNT(*)  as 'moyenne promotion'from generalparetudiant
+--7--
+select *from generalparetudiant where moyenne >= (select *  from moyennePR)

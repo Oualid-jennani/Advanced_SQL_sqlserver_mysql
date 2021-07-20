@@ -1,0 +1,179 @@
+create database serie8
+use serie8
+
+create table Client (
+numC smallint identity primary key ,
+nom varchar(20),
+prenom  varchar(20),
+adress varchar(50),
+numEmp smallint ,
+)
+create table Emp (
+numEmp smallint identity primary key ,
+nom varchar(20),
+prenom varchar(20),
+salaire smallint ,
+prime tinyint ,
+numDept smallint ,
+)
+create table Dept (
+numDept smallint identity primary key ,
+libelle varchar(20),
+chef smallint,
+stars varchar
+)
+---------------------constraint-------------------------
+alter table Client
+add constraint FK_numClient foreign key (numEmp) references Emp(numEmp)
+alter table Emp
+add constraint FK_numEmp foreign key (numDept) references Dept(numDept)
+alter table Dept
+add constraint FK_chef foreign key (chef) references Emp(numEmp)
+---------------------insertion----**---------------------
+insert into Client (nom,prenom,adress) values ('anass','saidi','hay najd')
+insert into Client (nom,prenom,adress)values ('messi','leo','bou arfa')
+insert into Client (nom,prenom,adress)values ('dirar','hicham','sidi yahya')
+insert into Client (nom,prenom,adress)values ('med','zarouki','filag toba 2015')
+
+insert into Emp (nom,prenom,salaire,prime)values ('yassin','jennani',15000,100)
+insert into Emp (nom,prenom,salaire,prime)values ('malika','laidl',16000,200)
+insert into Emp (nom,prenom,salaire,prime)values ('jihane','ngin',16000,200)
+insert into Emp (nom,prenom,salaire,prime)values ('karim','labdi',13000,150)
+insert into Emp (nom,prenom,salaire,prime)values ('walid','jennani',11000,90)
+
+insert into Dept (libelle)values('devlopement')
+insert into Dept (libelle)values('mecatronique')
+insert into Dept (libelle)values('electronic')
+--Exercice 1----------------------------------------------------------------------------------------------------------------------------------------------------------
+--1--
+create function getinfo( @n int )
+returns table
+as 
+   return( select nom , prenom from Emp e inner join  Dept d on e.numDept = d.numDept  where e.numEmp = @n)
+
+select * from dbo.getinfo(1)
+--2--
+create function GrandS()
+returns smallint
+as
+begin
+	declare @sal smallint
+	set @sal= (select max(salaire) from Emp)
+	return @sal
+end
+select dbo.GrandS()
+--3--
+drop function RevenuMensuel( @n int )
+returns int
+as 
+begin
+   declare @sal int,@prime tinyint,@Rmensuel int
+   set @sal=( select salaire from Emp where numEmp = @n)
+   set @prime=( select prime from Emp where numEmp = @n)
+   return ( @sal + @sal*@prime/100 )
+end
+select dbo.RevenuMensuel(4)
+---------------------------------------------------------------------------------
+go
+create function salairEmp(@numem int)
+returns  float 
+as 
+begin 
+declare @salairetotal float, @prime float
+set @prime =(select count(c.numEmp) from client c inner join emp e on e.numEmp=c.numEmp where @numem=c.numEmp)
+set @prime = (@prime /(select count(*) from client))
+set @salairetotal = (select salaire from emp where @numem=numEmp)
+set @salairetotal =@salairetotal+(@salairetotal*@prime)
+return @salairetotal
+end
+select dbo.salairEmp(7)
+--4--
+select * from Emp where salaire = (select dbo.GrandS())
+--5--
+create function EMPchef()
+returns @chefEmp table(libelle varchar(30),nomchef varchar(30),nomEmp varchar(30))
+as
+begin
+			DECLARE cpi CURSOR FOR select d.numDept,d.libelle,e.nom,e.prenom,d.chef from Emp e inner join Dept d on e.numEmp =d.chef
+			declare @numDept smallint,@libelle varchar(30),@nom varchar(30),@prenom varchar(30),@chef smallint
+			Open cpi
+			  FETCH NEXT FROM cpi INTO @numDept,@libelle,@nom,@prenom,@chef
+  
+			  While @@FETCH_STATUS=0 
+			  begin
+					insert into @chefEmp values(@libelle,@nom+' '+@prenom,'')
+					begin
+					 DECLARE cpi2 CURSOR FOR select nom,prenom from Emp where numDept = @numDept and numEmp<>@chef 
+					 declare @nom2 varchar(30),@prenom2 varchar(30)
+					 Open cpi2
+					 FETCH NEXT FROM cpi2 INTO @nom2,@prenom2
+					   While @@FETCH_STATUS=0 
+						begin
+							insert into @chefEmp values('','',@nom2+' '+@prenom2)
+							FETCH NEXT FROM cpi2 INTO @nom2,@prenom2
+						end
+					   Close cpi2
+					   DEALLOCATE cpi2
+					end
+
+
+				FETCH NEXT FROM cpi INTO @numDept,@libelle,@nom,@prenom,@chef 
+			  end
+
+			  Close cpi
+			  DEALLOCATE cpi
+		return 
+end
+
+select *from EMPchef()
+--6--
+go
+create view maxclient 
+as
+SELECT e.nom, e.prenom, COUNT(*) AS [nombre client] FROM Emp e INNER JOIN Client c ON e.numEmp = c.numEmp GROUP BY e.nom, e.prenom
+----------------------------------------------------------------------------------------------------------------------------------
+go
+CREATE function EmpMaxClient()
+returns table
+as
+return (select nom ,prenom ,[nombre client] from maxclient where [nombre client] = (select  max([nombre client])from maxclient  ))
+--Exercice 2----------------------------------------------------------------------------------------------------------------------------------------------------------
+--1--
+GO
+CREATE TRIGGER [dbo].[InsertEMP] ON [dbo].[Emp]
+FOR INSERT
+as
+begin
+select * from inserted
+end
+alter table Emp alter column prime int
+--2--
+GO
+create TRIGGER PrimeEMP ON Client
+FOR INSERT,DELETE,UPDATE
+as
+begin
+UPDATE Emp SET prime = ( cast( ( select count(c.numEmp) from client c WHERE c.numEmp = EMP.numEmp ) as float ) / ( select count(*) from client ) ) * ( SELECT salaire FROM Emp e WHERE e.numEmp = Emp.numEmp )
+end
+--3--
+GO
+alter TRIGGER starsEMP ON Emp
+FOR INSERT
+as
+begin
+declare @numEmp smallint,@sal int,@i smallint,@stars varchar(10)
+set @numEmp=(select numEmp from inserted)
+set @sal = (select salaire from inserted )
+set @stars=''
+set @i=@sal/5000
+while(@i>0)
+	begin
+		set @stars =@stars+'*'
+		set @i=@i-1
+	end
+Update  Emp set stars=@stars where numEmp = @numEmp
+end
+
+
+
+

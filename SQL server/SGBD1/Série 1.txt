@@ -1,0 +1,70 @@
+--Exercice 1 :
+create table Fournisseur ( Num_F smallint primary key identity, nom nvarchar(30), ville nvarchar(30))
+create table Produit (Code_P  smallint primary key identity, libellé nvarchar(30), origine nvarchar(30), couleur nvarchar(30))
+create table Fourniture (Num_F smallint foreign key references Fournisseur(Num_F), Code_P smallint foreign key references Produit (Code_P), quantité smallint)
+
+alter table Fourniture 
+Add constraint QP check ( quantité>0)
+
+insert into Fournisseur values( 'walid','oujda')
+
+insert into Produit values( 'stylo','jiha char9ya','red' )
+
+insert into Fourniture values(1,1,20)
+--***********************************************************************************************************************
+
+--Exercice 2 :
+
+create table Article_2 (NoArt smallint primary key identity, Libelle varchar(30) , Stock smallint , PrixInvent float);
+create table Fournisseur_2 (Num_F smallint primary key identity, nom varchar(30),ville varchar(40) );
+create table FOURNIR_2 (
+	NoFour smallint Foreign Key references Fournisseur_2(Num_F) ,
+	NoArt smallint Foreign Key references Article_2 (NoArt) ,
+	PrixArticle float , 
+	Delai tinyint,
+	primary key (NoFour,NoArt )
+);
+
+alter table Article_2 
+add constraint c1 check (Stock >0 and PrixInvent >0)
+alter table FOURNIR_2
+add constraint c check (PrixArticle >0 and Delai >0)
+    
+insert into Article_2 values('Alami',10,15)
+insert into Fournisseur_2 values('bic','Oujda');
+insert into FOURNIR_2 values(1,1,10,20);
+
+Select *From Article_2 
+Select *From Fournisseur_2 
+Select *From FOURNIR_2 
+--*************************************************************************************************************************
+--Exercice 3 :
+--*************************************************************************************************************************
+--Exercice 4:
+
+create table ETUDIANT_4 (NEtudiant smallint primary key identity, Nom varchar(30), Prénom varchar(30))
+create table MATIERE_4 (CodeMat smallint primary key , LibelléMat varchar(30) , CoeffMat tinyint)
+create table EVALUER_4 
+(
+ NEtudiant smallint Foreign Key references ETUDIANT_4 (NEtudiant),
+ CodeMat smallint Foreign Key references MATIERE_4 (CodeMat), 
+ [Date] date, 
+ Note float 
+)
+alter table EVALUER_4 add constraint pos check( Note>=0 and Note<=20 )
+
+insert into ETUDIANT_4 values( 'walid','jennani' )
+insert into MATIERE_4 values(101, 'TDI',3 )
+insert into EVALUER_4 values(1,101,'2018-5-5',19)
+
+--*************************************************************************************************************************
+--Exercice 5:
+
+create table EQUIPE_5 (CodeEquipe smallint primary key , NomEquipe nvarchar(30), DirecteurSportif nvarchar(30))
+create table COUREUR_5 (NuméroCoureur smallint primary key, NomCoureur nvarchar(30) , CodeEquipe smallint Foreign Key references EQUIPE_5 (CodeEquipe) , CodePays smallint Foreign Key references PAYS_5(CodePays))
+create table PAYS_5 (CodePays smallint primary key , NomPays nvarchar(30))
+create table TYPE_ETAPE_5 (CodeType smallint primary key, LibelléType nvarchar(30))
+create table ETAPE_5 (NuméroEtape smallint primary key, DateEtape date , VilleDép nvarchar(30), VilleArr nvarchar(30), NbKm smallint, CodeType smallint Foreign Key references  TYPE_ETAPE_5 (CodeType))
+create table PARTICIPER_5 (NuméroCoureur smallint Foreign Key references COUREUR_5 (NuméroCoureur) , NuméroEtape smallint Foreign Key references ETAPE_5 (NuméroEtape), TempsRéalisé time)
+create table ATTRIBUER_BONIFICATION_5 (NuméroEtape smallint Foreign Key references  ETAPE_5 (NuméroEtape), km smallint, Rang tinyint, NbSecondes smallint , NuméroCoureur smallint Foreign Key references COUREUR_5(NuméroCoureur))
+

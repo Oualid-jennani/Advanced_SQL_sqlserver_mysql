@@ -1,0 +1,107 @@
+--Exercices 1:
+declare @Pair_impair table (num smallint primary key ,reponse varchar(20))
+
+insert  into @Pair_impair values (10,'')
+insert into @Pair_impair values (11,'')
+insert into @Pair_impair values (13,'')
+insert  into @Pair_impair values (8,'')
+ 
+begin
+DECLARE cpi CURSOR FOR select num from @Pair_impair
+declare @num int
+Open cpi
+
+  FETCH NEXT FROM cpi INTO @num
+  
+  While @@FETCH_STATUS=0 
+  begin 
+	if (@num % 2 = 0)
+		update @Pair_impair set reponse='pair' WHERE num = @num
+	else 
+		update @Pair_impair set reponse='impair' WHERE num = @num
+
+	FETCH NEXT FROM cpi INTO @num
+	end
+
+  Close cpi
+  DEALLOCATE cpi
+ End
+
+ select * from @Pair_impair
+ ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+declare @Calcul table (Num1 float ,Num2 float ,op char,Resultat float)
+
+insert into @Calcul values(20,60,'+','')insert into @Calcul values(20,60,'-','')insert into @Calcul values(20,60,'*','')insert into @Calcul values(20,60,'/','')
+insert into @Calcul values(23,2.5,'+','')insert into @Calcul values(11,5.8,'-','')insert into @Calcul values(6,9,'*','')insert into @Calcul values(24,1,'/','')
+insert into @Calcul values(7,3.4,'+','')insert into @Calcul values(6,5.3,'-','')insert into @Calcul values(5,0,'*','')insert into @Calcul values(2.8,33,'/','')
+insert into @Calcul values(2,100,'+','')insert into @Calcul values(100,200,'-','')
+
+begin 
+declare cur cursor for select Num1,Num2,op from @Calcul
+declare @num1 float,@num2 float,@op char,@resultat float
+open cur 
+fetch next from cur into @num1,@num2,@op
+While @@FETCH_STATUS=0 
+begin 
+if(@op='+') set @resultat = @num1+@num2 if(@op='-') set @resultat = @num1-@num2
+if(@op='*') set @resultat = @num1*@num2 if(@op='/') set @resultat = @num1/@num2
+
+update @Calcul set Resultat=@resultat where Num1=@num1 and Num2=@num2 and op=@op
+
+fetch next from cur into @num1,@num2,@op 
+end
+close cur deallocate cur
+end 
+select *from @Calcul
+---------------------------------------------------------------------------------------------------
+--Exercices 2:
+declare @Stagiaire table(IdStg smallint primary key identity, Nom varchar(20), Moyenne float) 
+declare @Matiere table(IdMat smallint primary key identity, Libellé varchar(20), Coeff decimal) 
+declare @Note table(IdStg smallint , IdMat smallint, Note float)
+
+insert into @Stagiaire values('ali',0),('walid',0),('youssef',0),('alami',0)
+insert into @Matiere values('c#',2),('SGBD1',3),('SGBD2',5),('java',1)
+insert into @Note values(1,1,13),(1,2,10),(1,3,20),(1,4,20),(2,1,19),(2,2,19),(2,3,9),(2,4,19),(3,1,19),(3,3,11),(3,4,19)
+begin
+declare cur cursor for select S.IdStg , sum(Note*Coeff)/sum(Coeff) from @Note N inner join @Stagiaire S on N.IdStg = S.IdStg 
+inner join @Matiere M on N.Idmat= M.IdMat group by S.IdStg 
+
+declare @IdStg smallint,@moyenne float
+open cur 
+fetch next from cur into @IdStg,@moyenne
+While @@FETCH_STATUS=0 
+begin 
+update @Stagiaire set Moyenne = @moyenne where IdStg=@IdStg
+fetch next from cur into @IdStg,@moyenne
+end
+
+close cur deallocate cur
+end 
+select *from @Stagiaire
+------------------------------------------------------------------------------------------------------------------------------------------
+declare @Result table (Stagiaire varchar(20),Matiere varchar(20),Coeff varchar(20),MoyMatiere varchar(20)  )
+begin
+declare cur2 cursor for select S.Nom,m.Libellé,M.Coeff,N.Note,S.Moyenne from @Note N inner join @Stagiaire S on S.IdStg=N.IdStg inner join @Matiere M on M.IdMat=N.IdMat order by S.Nom
+
+declare @StagiaireS varchar(20),@matiereM varchar(20),@Coeff varchar(20),@MoyMatiere float,@moyGeneral float,@Nom varchar(20),@solution float
+open cur2 
+fetch next from cur2 into @StagiaireS,@matiereM,@Coeff,@MoyMatiere,@moyGeneral
+insert into @Result values(@StagiaireS,'','','')
+set @Nom=@StagiaireS
+While @@FETCH_STATUS=0 
+begin 
+set @Nom=@StagiaireS
+insert into @Result values('',@matiereM,@Coeff,cast(@MoyMatiere as varchar(20)))
+ set @solution=@moyGeneral
+fetch next from cur2 into @StagiaireS,@matiereM,@Coeff,@MoyMatiere,@moyGeneral
+if(@Nom<>@StagiaireS)
+begin
+set @moyGeneral = @solution
+insert into @Result values('','','Moyenne',cast(@moyGeneral as varchar(20)))
+insert into @Result values(@StagiaireS,'','','')
+end
+end
+insert into @Result values('','','Moyenne',cast(@moyGeneral as varchar(20)))
+close cur2 deallocate cur2
+end 
+select *from @Result

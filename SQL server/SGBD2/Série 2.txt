@@ -1,0 +1,136 @@
+--1--*********************************************************************************************************************************************************************************
+create database T_seie2
+use T_seie2
+--2--*********************************************************************************************************************************************************************************
+go
+create Proc AcciRoute
+as
+begin
+
+	if exists(select * from sys.tables where name like 'Personne')
+	 drop table Personne
+	create table Personne (NAS char(9) primary key, nom varchar(35), VilleP Varchar(50))
+	--------------------------------------------------------------
+	if exists(select * from sys.tables where name like 'Voiture')
+	 drop table Voiture
+	create table Voiture (Imma Char(6) primary key, modele varchar(20), annee char(4), nas char(9))
+	--------------------------------------------------------------
+	if exists(select * from sys.tables where name like 'Accident')
+	 drop table Accident
+	create table Accident (DateAc Date, NAS char(9) Foreign Key references Personne(NAS) , dommage numeric(7 ,2), villeAc varchar(50),imma char(6)  Foreign Key references Voiture(Imma))
+
+end
+
+Exec AcciRoute
+--3--*********************************************************************************************************************************************************************************
+go
+create proc inserte(@dateAc datetime,@NAS char,@dommage numeric,@villeAc varchar,@imma char)
+as
+begin---
+------------------------------------------------------------
+	 BEGIN try--
+	  if not exists(select * from Personne where @NAS=NAS)
+
+		RAISERROR('NAS introuvable ',15,1) 
+
+	  else if not exists(select * from Voiture where @Imma=Imma)
+
+		RAISERROR('IMMA introuvale ',15,1)
+
+	  else if not exists(select * from Accident)
+
+		insert into Accident values(@dateAc,@NAS,@dommage,@villeAc,@imma)
+	 end try--
+	 begin catch--
+	  select ERROR_MESSAGE() AS ErrorMessage
+	 end catch--
+ ------------------------------------------------------------
+end---
+Exec inserte '12/06/1993 05:30','xxx',30,'rabat','yyy'
+--4--*********************************************************************************************************************************************************************************
+go
+create proc GetnumProp(@A1 int,@A2 int)
+as
+begin
+ select COUNT(distinct NAS) from Accident where YEAR(DateAc) between @A1 and @A2
+end
+exec GetnumProp 2011,2017
+--5--*********************************************************************************************************************************************************************************
+create proc GetProp 
+as
+begin
+select nom,NAS from Personne where NAS in
+(select distinct A.NAS from Accident A where A.NAS=( select NAS from Accident where NAS=A.NAS and A.DateAc<>DateAc and DATEDIFF(month,A.DateAc,DateAc) between -4 and 4 ))
+--select distinct  P.nom,P.NAS from Personne P,Accident A1,Accident A2 where A1.NAS=A2.NAS and A1.NAS=P.NAS and A1.NAS>=A2.NAS and ABS(DATEDIFF(month ,A1.DateAc,A2.DateAc))>4
+End
+exec GetProp
+--6--*********************************************************************************************************************************************************************************
+go
+create proc GetDamCity @ville varchar(12) as
+begin
+	select sum(dommage) as 'total' , 
+	case 
+		when sum(dommage)<=5000 then 'catégorie1'
+		when (sum(dommage)between 5000 AND 10000) then 'catégorie2'	
+		else 'catégorie3' 
+	end 
+	from Accident where @ville=villeAc
+end
+
+exec GetDamCity 'oujda'
+--7--*********************************************************************************************************************************************************************************
+go
+create proc GetnumAcci as
+begin
+select villeAc, COUNT(*)as 'nombre total' from Accident group by villeAc
+end
+exec GetnumAcci
+--8--*********************************************************************************************************************************************************************************
+go
+create proc GetNamProp @X int as
+begin
+
+select P.nom,p.VilleP from Personne P where P.VilleP in (select A.villeAc from Accident A group by A.villeAc having count(*)>=@x)
+
+end
+exec GetNamProp 2
+--9--*********************************************************************************************************************************************************************************
+go
+create proc GetnumAcciDat @DateAc datetime as
+begin
+select COUNT(*)as'nbr d"accident' from Accident where DateAc=@DateAc
+end
+exec GetnumAcciDat '18/1/2016'
+--10--*********************************************************************************************************************************************************************************
+go
+alter proc GetnumAcciHour @h1 datetime,@h2 datetime as
+begin
+select count(*)as 'nbr d"accident' from Accident A where DATEPART(hour,A.DateAc) between DATEPART(hour,@h1)and DATEPART(hour,@h2)
+end
+
+exec GetnumAcciHour '01:00:00','02:10:00'
+
+--11--*********************************************************************************************************************************************************************************
+go
+create proc UpdateDam as
+begin
+update Accident set dommage=dommage-(dommage*0.05) where dommage>=5000
+end
+exec UpdateDam
+
+
+
+
+
+
+
+insert into Personne values('A101','hakim','casa'),('B101','saaid','Berkan'),('D202','walid','oujda'),('C320','chafik','Ifran'),('H404','hayat','Saidia')
+
+insert into Voiture values
+('Mar001','Dasia','2011','11111'),('Mar02','mercedes','2017','2222'),('Mar03','kia','2010','3333'),
+('Mar04','4x4','2018','4444'),('Mar05','4x4','2015','5555'),('fr634','henday','2015','21212'),('Mar07','dasia','2015','7777')
+
+insert into Accident values
+('2017-1-2','A101',80006.3,'casa','Mar02'),('2016-1-18','B101',50000.5,'berkan','Mar001'),('2017-3-6','A101',4456.3,'fes','Mar02'),
+('2016-8-1','C320',30000.5,'ifran','Mar07'),('2017-5-20','C320',4887.3,'ifran','fr634'),('2017-7-18','H404',1500.03,'oujda','Mar05'),
+('2018-3-9','C320',7712.5,'nador','fr634'),('2018-7-4','H404',4000.01,'oujda','Mar05'),('2018-8-9','H404',1500.4,'saidia','Mar05')

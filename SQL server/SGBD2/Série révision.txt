@@ -1,0 +1,153 @@
+use Série_révision
+
+create table pays (numpays int primary key identity, nom varchar(20), capitale varchar(20))
+
+create table ville (numville int primary key identity, nom varchar(20), numpays int foreign key references pays (numpays) )
+
+create table Personnes (numper int primary key identity, nom varchar(30), prenom varchar(20), adresse varchar(30), ville varchar(30), numpays int foreign key references pays (numpays) )
+
+create table Musees (nummus int primary key identity, nom varchar(30), numville int foreign key references ville (numville), adresse varchar(30), description varchar(50), directeur int foreign key references Personnes (numper) )
+
+create table Hotels (numhotel int primary key identity, nom varchar(30), nbetoiles int , adresse varchar(50), description varchar(300),numville int foreign key references ville (numville), directeur int foreign key references Personnes (numper))
+
+create table Catchambres (numcat int primary key identity, nombredechambres int, prixppers real, caracteristiques varchar(300), numhotel int foreign key references Hotels (numhotel))
+
+create table Monuments (nummon int primary key identity, nom varchar(30), adresse varchar(30), numville int foreign key references ville (numville), description varchar(300), directeur int foreign key references Personnes (numper)  )
+
+create table Tours (numtour int primary key identity, description varchar(100), duree int, numpays  int foreign key references pays (numpays), prix real)
+
+create table Transports (numtrsp int primary key identity, compagnie varchar(30), medium varchar(20), depart int foreign key references ville (numville), arrivee int foreign key references ville (numville), hdepart time, harrivee time, cout decimal(8, 3))
+
+create table Utiliser (numutour int foreign key references Tours(numtour), numtrsp  int foreign key references Transports(numtrsp), primary key (numutour, numtrsp))
+
+create table Acheter (numper int foreign key references Personnes(numper), numtour int foreign key references Tours(numtour) , dateachat date, primary key(numper, numtour))
+
+insert into pays values ('France','paris'),('Espagne','madrid'),('Maroc','rabat')
+insert into ville values ('oujda',3),('marsielle',1),('bercelone',2)
+insert into Personnes values ('moussaoui','youssef','mledjsihsiu','oujda',3),('alami','karim','mledjsihsiu','barcelone',2),('naji','hakim','mledjsihsiu','marsille',1),('jenani','walid','mledjsihsiu','marsille',2),('rami','hakim','mledjsihsiu','oujda',3),('alaoui','hicham','mledjsihsiu','barcelone',1),('idrisi','hassan','mledjsihsiu','casa',1),('bensarya','med','mlehiu','almirya',3),('amrani','ahmed','mlccu','nice',2)
+insert into Musees values('AAA',1,'aaaaaaaaaaaaa','musees de lartiznat',2),('BBB',3,'bbbbbbbbbb','musees  historiques',1),('CCC',2,'cccccccccc','musees  d art',3)
+insert into Hotels values('Lutetia de Paris',4,'rue 0101','...........',1,4),('Lutetia de barcelone',4,'rue 5555','.........',2,6)
+insert into Catchambres values(12,1000,'.............',1),(24,1500,'............',3),(22,2300,'...........',2)
+insert into Monuments values('sport','rue 9999',1,'...........',7),('cenima','rue 1230',2,'.........',8),('art','rue 1021',3,'..........',1)
+insert into Tours values ('gfdgdfgdfgd',10,3,1200),('msmmsm',6,3,1500),('eoueie',15,2,3000)
+insert into Transports values ('mercedes','fihr',1,3,'12:34:54.1237','20:30:50.1107',22.3),('renult','ssss',3,1,'09:00:54.1237','16:30:50.107',10.12),('golf','fihr',2,2,'08:15:54.1237','13:30:50.1107',15.4)
+insert into Utiliser values(1,1),(2,2),(3,2)
+insert into Acheter values(8,1,'2018-05-11'),(3,3,'2018-04-05'),(2,1,'2018-05-01')
+
+--1--
+select * from Personnes order by nom ,prenom
+--2--
+select distinct ville   from personnes
+--3--
+select nom,prenom from Personnes where ville='barchalona'
+--4--
+select * from Transports where cout <100
+--5--
+select   upper(Substring (nom,1,1))+Lower (Substring (nom,2,len (nom)-1)),prenom from Personnes where nom like '%R%' and nom not like '%A%' and nom not like '%T%'
+--6--
+select ville, count(*) from Personnes group by ville
+--7--
+select * from hotels where nbetoiles = 4
+--8--
+select nom , len (capitale) from pays
+--9--
+select AVG(prix) from Tours
+--10--
+select min(prix),max (prix ) from Tours
+--11--
+select prix , prix -((19.6*prix)/100) as 'prix hors tax'from Tours
+--12--
+select ville, count(*) as 'nombre persone' from personnes group by ville order by count(ville) desc 
+--13--
+select DATEDIFF(MINUTE ,hdepart,harrivee) from Transports
+------------------ jointures --------------------
+--14--
+select distinct count (*) from Personnes P inner join Acheter Ac on P.numper =Ac.numper where  p.numper in ( select numper from Acheter group by numper having count(*)=1 )
+
+--select distinct count (*) from Personnes P inner join Acheter TP on P.numper =TP.numper inner join Tours T on TP.numtour =T.numtour 
+--15--
+select h.nom,h.nbetoiles from Hotels h inner join ville v on h.numville=v.numville where v.nom='barchalona'
+--16--
+select p.nom,p.prenom from Personnes p inner join Hotels h on p.numper=h.directeur  where h.nom ='lmanara'
+
+select * from Personnes P inner join Hotels H on P.numper =H.directeur  where H.nom like 'Lutetia de Paris'
+--17--
+select * from Acheter Ac , Personnes P,Tours T where P.numper =Ac.numper and Ac.numtour =T.numtour and T.description like '%Paris by night%' order by nom asc 
+
+select * from Personnes P where P.numper in (select Ac.numper from Acheter Ac where Ac.numtour  in  (select T.numtour from Tours T  where T.description like '%Paris by night%')) order by nom asc 
+--18--
+select * from Personnes P inner join Acheter TP on P.numper =TP.numper inner join Tours T on TP.numtour =T.numtour where ville ='barcelone'
+--19--
+select p.nom as 'nom pays', count(*)as'nombre hotel 4 toiles' from ville v inner join  Hotels h on v.numville=h.numville 
+inner join pays p on v.numpays= p.numpays where h.nbetoiles=4 group by p.nom
+--select p.nom,h.nom from ville v inner join Hotels h on v.numville =h.numville inner join pays p on v.numpays =p.numpays where h.nbetoiles =4
+--20--
+select p.nom,h.nom,h.nbetoiles from ville v inner join  Hotels h on v.numville=h.numville 
+inner join pays p on v.numpays= p.numpays group by p.nom,h.nom,h.nbetoiles  order by h.nbetoiles desc
+select p.nom,h.nom,h.nbetoiles from ville v inner join Hotels h on v.numville =h.numville inner join pays p on v.numpays =p.numpays order by nbetoiles desc
+--21--
+select p.nom , p.prenom from Personnes P inner join Musees m on p.numper=m.directeur where m.nom like 'm%'
+--22--
+select * from Transports t inner join ville v on t.depart=v.numville 
+where t.depart = (select numville from ville where nom = 'barchalona')and t.arrivee = (select numville from ville where nom = 'seviya')
+--23--
+select * from Transports t inner join ville v on t.depart=v.numville where t.depart in (select numville from ville where nom = 'barchalona'or nom = 'ispaniol' )
+and t.arrivee in (select numville from ville where nom = 'ispaniol' or nom = 'barchalona') order by t.depart ,t.cout desc
+--24--
+select * from Transports t inner join ville v on t.depart=v.numville where t.depart in (select numville from ville where nom = 'barchalona'or nom = 'ispaniol' )
+and t.arrivee in (select numville from ville where nom = 'ispaniol' or nom = 'barchalona') 
+and t.hdepart >=cast ('06:00:00.0000' as time) and t.hdepart<=cast ('08:00:00.0000' as time)
+--25--
+select distinct p1.nom,p1.prenom from Personnes p1 inner join Personnes p2 on p1.nom= p2.nom and p1.prenom= p2.prenom and p1.numper < p2.numper
+--26--
+select distinct p1.nom +' '+ p1.prenom as 'couple 1' ,p2.nom +' '+p2.prenom as'couple 2' from personnes p1
+inner join Personnes p2 on p2.numper in( select numper from Personnes where numper >p1.numper )where p1.ville = 'barchalona' and  p2.ville = 'barchalona'
+------------------Les requêtes------------------------
+--27--
+select count(*)as'nombre persone' from Acheter where numper in ( select numper from Acheter group by numper having count(*)=1 )
+--select distinct count (*) from Personnes P  where P.numper in (select TP.numper from Acheter TP where TP.numtour in  (select  T.numtour from Tours T) )  
+--28--
+--1
+select h.nom,h.nbetoiles from Hotels h , ville v where h.numville=v.numville and v.nom='barchalona'
+--2
+select h.nom,nbetoiles from Hotels h where h.numville in ( select numville from ville where nom like 'barchalona' )
+--29--
+select p.nom , p.prenom from Personnes P , Musees m where p.numper=m.directeur and m.nom like 'm%'
+--select p.nom,p.prenom from Personnes p where p.numper in (select  m.directeur from Musees m where m.nom like 'm%')
+--30--
+select * from Tours where prix >= (select avg (prix)from Tours)
+--31--
+select * from Personnes P where P.numper in (select Ac.numper from Acheter Ac where Ac.numtour  in  (select T.numtour from Tours T  where description like '%Paris by night%')) order by nom asc 
+--32--
+select * from Transports t where t.depart =(select numville from ville  where nom ='barchalona') and t.arrivee =(select numville from ville where nom ='seviya')
+
+--select * from Transports t where t.depart in (select v.numville from ville v  where t.depart = (select numpays from ville where nom ='barchalona') and t.arrivee =(select numpays from ville where nom ='seviya') ) 
+--33--
+select * from Personnes 
+
+select ville, count(*) as 'nombre persone' from personnes group by ville order by count(ville) desc 
+
+--42--
+--43--
+--44--
+select *, DATEDIFF(second ,hdepart, harrivee) as 'durée par second' from Transports where hdepart >=cast ('18:00:00.0000' as time)
+--45--
+select  *, DATEDIFF(MINUTE ,hdepart, harrivee) as 'durée par second' from Transports t 
+where t.depart =(select numville from ville  where nom ='barchalona') and t.arrivee =(select numville from ville where nom ='seviya')
+order by [durée par second] desc
+--46--
+select * from Tours where duree> (select max(duree) from Tours where description like '%Paris by night%')
+----
+select *from Tours where   numtour in
+(select U.numutour from Utiliser U  inner join Transports TR on U.numtrsp = TR.numtrsp where DATEDIFF(MINUTE ,TR.hdepart, TR.harrivee)>
+(select max(DATEDIFF(MINUTE ,hdepart, harrivee)) from Utiliser U inner join Transports Tr on U.numtrsp= tr.numtrsp inner join Tours T on t.numtour=U.numutour where T.description like '%Paris by night%'))
+--47--
+select * from personnes where numper in (
+select p.numper from personnes p inner join Acheter Ac on p.numper=Ac.numper inner join Tours T on T.numtour = Ac.numtour where cast( month(T.duree) as smallint) >1)
+
+
+select * from Transports where numtrsp in( select numtrsp from Utiliser where numutour in(
+select numtour from Tours where description not like '%Paris by night%' and  numtour in
+(select U.numutour from Utiliser U  inner join Transports TR on U.numtrsp = TR.numtrsp where DATEDIFF(MINUTE ,TR.hdepart, TR.harrivee) > any
+(select DATEDIFF(MINUTE ,hdepart, harrivee) from Utiliser U inner join Transports Tr on U.numtrsp= tr.numtrsp inner join Tours T on t.numtour=U.numutour where T.description like '%Paris by night%'))
+))

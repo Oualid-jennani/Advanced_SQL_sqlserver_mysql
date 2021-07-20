@@ -1,0 +1,317 @@
+USE cinema
+
+CREATE TABLE Personne (
+	numP smallint identity primary key,
+	prenom varchar(50) not null,
+	nom varchar(50) not null,
+	dateNaiss smalldatetime,
+	nationalite varchar(50),
+	adresse varchar(100),
+	ville varchar(50),
+	telephone varchar(20)
+)
+CREATE TABLE Film (
+	numF smallint identity primary key,
+	titre varchar(100) not null,
+	genre varchar(50),
+	annee smallint,
+	logueur smallint,
+	budget smallmoney,
+	realisateur smallint foreign key references Personne(numP),
+	salaire_real smallmoney
+)
+CREATE TABLE Acteur (
+	numA smallint foreign key references Personne(numP) primary key,
+	agent smallint foreign key references Personne(numP),
+	specialite varchar(50),
+	taille float,
+	poids float
+)
+
+CREATE TABLE Distribution (
+	numF smallint foreign key references Film(numF),
+	numA smallint foreign key references Acteur(numA),
+	roleA varchar(50),
+	salaire smallmoney,
+	primary key(numF, numA, roleA)
+)
+CREATE TABLE Cinema (
+	numC smallint identity primary key,
+	nom varchar(60) not null,
+	adresse varchar(100),
+	ville varchar(50),
+	telephone varchar(20),
+	compagnie varchar(50),
+)
+CREATE TABLE Salle (
+	numS smallint,
+	numC smallint foreign key references Cinema(numC),
+	tailleEcran float,
+	nbPlaces smallint,
+	primary key(numC, numS)
+)
+CREATE TABLE Passe (
+	numF smallint foreign key references Film(numF),
+	numC smallint,
+	numS smallint,
+	dateDebut smalldatetime,
+	dateFin smallDateTime,
+	horaire time,
+	prix smallmoney,
+	primary key(numF, numC, numS, dateDebut),
+	foreign key(numC, numS) references Salle(numC, numS)
+)
+------insetion des valeurs ---------------
+------personne--------------------
+insert into PERSONNE values('talbi','anass','6-5-2018','marocaine','rue 45','oujda','065523575')
+insert into PERSONNE values('smart','joe','6-5-2018','americaine','rue 78','paris','02666666')
+insert into PERSONNE values('bzioui','hanan','8-8-2018','marocaine','rue 12','rabat','025858686')
+insert into PERSONNE values('kali','frank','19-6-2018','americaine','rue 789','new york','028585585')
+------film--------------
+insert into FILM values('iron man','action',2015,120,15000,1,1500)
+insert into FILM values('saw','horreur',2016,150,16000,2,1600)
+insert into FILM values('f45','science',2016,150,16000,2,1300)
+insert into FILM values('chichi','horreur',1999,100,17000,1,1500)
+insert into FILM values('one piece ','anime',2010,100,17000,3,1800)
+insert into FILM values('tokyo ghol','anime',2011,120,17000,3,1600)
+insert into FILM values('naruto','anime',2012,200,17000,3,1300)
+------acteur---------------------------------
+insert into ACTEUR values(1,2,'horreur',15,45)
+insert into ACTEUR values(2,3,'action',12,30)
+insert into ACTEUR values(3,3,'comedie',18,20)
+insert into ACTEUR values(4,2,'action',16,50)
+------cinema---------------------------------
+insert into CINEMA values ('cinema paris','rue25','oujda','06456898','SNTR')
+insert into CINEMA values ('cinema lux','rue10','casa','06587898','NETFLIX')
+insert into CINEMA values ('cinema paris','rue32','jdida','0645997898','SNRT')
+insert into CINEMA values ('cinema paris','rue78','rabat','06452537898','MBC')
+------personne------------------------------
+insert into PERSONNE values('talbi','anass','6-5-2018','marocaine','rue 45','oujda','065523575')
+insert into PERSONNE values('smart','joe','6-5-2018','americaine','rue 78','paris','02666666')
+insert into PERSONNE values('bzioui','hanan','8-8-2018','marocaine','rue 12','rabat','025858686')
+insert into PERSONNE values('kali','frank','19-6-2018','americaine','rue 789','new york','028585585')
+------distribution------------------------
+insert into DISTRIBUTION values (1,1,1,15000)
+insert into DISTRIBUTION values (2,2,1,17000)
+insert into DISTRIBUTION values (2,3,1,15000)
+------salle-------------------------------
+insert into SALLE values (1,1,1500.1500,120)
+insert into SALLE values (1,2,1800.2000,200)
+insert into SALLE values (1,3,1800.2000,250)
+insert into SALLE values (2,1,1500.1500,120)
+insert into SALLE values (2,2,1800.2000,200)
+insert into SALLE values (2,3,1800.2000,250)
+insert into SALLE values (3,1,1500.1500,120)
+insert into SALLE values (3,2,1800.2000,200)
+insert into SALLE values (3,3,1800.2000,250)
+-----passe --------------------------------
+insert into PASSE values (1,2,3,'4-2-2015','7-6-2015','15:22:00',150)
+insert into PASSE values (1,3,3,'4-2-2015','11-6-2015','15:44:00',140)
+insert into PASSE values (1,1,3,'4-2-2015','7-8-2015','15:22:00',180)
+insert into PASSE values (2,2,3,'4-2-2015','10-9-2015','15:55:00',100)
+
+--15--
+select sum(d.salaire) from Distribution d inner join film F on F.numF =d.numF where f.titre='Nuits blanches à Seattle'
+
+select sum(d.salaire) from Film f, Distribution d,Acteur a
+where d.numF = f.numF
+and d.numA = a.numA
+and f.titre = 'Nuits blanches à Seattle'
+--16--
+select f.titre,f.annee,avg(d.salaire) as 'moyenne des salaire' from film F inner join Distribution d on d.numF=f.numF group by f.titre,f.annee 
+
+select f.numF,f.titre,f.annee, avg(d.salaire) from Film f, Distribution d,Acteur a
+where d.numF = f.numF
+and d.numA = a.numA
+group by f.numF,f.titre,f.annee
+
+--17--
+select genre from film where annee between 1980and 1989  group by genre having avg(budget)>15000
+--18--
+select f.titre , f. annee,sum(d.salaire) as 'total salaire'  from film f inner join Distribution d on d.numF = f.numF inner join Acteur a on a. numA = d.numA 
+inner join Personne p on p.numP = f.realisateur where p.nom = 'Spielberg' group by f.titre , f. annee
+
+select p.nom,f.titre,f.annee,sum(d.salaire) from Film f, Distribution d,Acteur a,Personne p
+where d.numF = f.numF
+and d.numA = a.numA
+and a.numA =p.numP
+and p.nom = 'Spielberg'
+group by p.nom,f.titre,f.annee
+--19--
+select c.numC ,c.nom, avg(s.tailleEcran) from  Cinema c inner join Salle S on c.numC=S.numC group by C.numC,c.nom having avg(s.tailleEcran)> 1800
+--20--
+select c.nom,f.titre from Cinema c, Salle s , Passe p,Film f , Personne pr
+where c.numC = p.numC
+and pr.numP = f.realisateur
+and p.numF= f.numF
+and s.numS = p.numS
+and s.nbPlaces>200
+and s.tailleEcran>1800
+and c.ville = 'paris'
+and c.compagnie = 'fox'
+and pr.nom= 'Elia Kazan'
+and p.horaire> cast('22:00:00.0000'as time )
+--22--
+select*from Personne where numP in 
+( select A.numA from Acteur A inner join Distribution d on d.numA = A.numA inner join
+ Film f on f.numF =d.numF where d.salaire>f.salaire_real)
+ --23--
+ select p1.nom, p1.prenom ,p2.nom,p2.prenom from Personne p1,Personne p2 where p1.numP in ( select p.numP from Personne p,[Distribution] D where P.numP=d.numA)
+ and p2.numP in( select p.numP from Personne p inner join Film F ON f.realisateur = p.numP)and p2.numP in( select nump from Personne where numP >p1.numP)
+
+select p1.nom, p1.prenom ,p2.nom,p2.prenom from Personne p1 inner join Personne p2 on p1.numP <> p2.numP and p2.numP > p1.numP where 
+(select count(d.numA) from [Distribution] D inner join Film f on f.realisateur = p2.numP and d.numA = P1.numP) > 0
+   and
+(select count(d.numA) from [Distribution] D inner join Film f on f.realisateur = p1.numP and d.numA = P2.numP) > 0
+
+
+
+ --24--
+ select a.numA , p.nom,p.prenom from Personne p 
+ inner join Acteur a on A.numA=P.numP 
+ inner join Distribution d on a.numA= d.numA
+ inner join film F on f.numF = d.numF
+ where f.numF in(select f.numF from film f inner join Personne P on  f.realisateur = p.numP and p.nom ='Lelouch')
+ group by a.numA , p.nom,p.prenom
+ having count(*) =(select count(*) from film f inner join personne p on p.nump =f.realisateur where p.nom = 'Lelouch')
+ --25--
+select a.numA , p.nom,p.prenom from Personne p inner join Acteur a on A.numA=P.numP 
+group by a.numA , p.nom,p.prenom
+having A.numA in (select  D.numA from Distribution D inner join film f on d.numF=f.numF where 
+f.numF in (select f.numF from film f inner join Personne P on  f.realisateur = p.numP and p.nom ='Lelouch') and
+D.salaire = (select max(salaire) from Distribution where numF = f.numF))
+
+select d.numF,p.nom,p.prenom from Personne p inner join Acteur a on a.numA =p.numP inner join Distribution d
+on d.numA =a.numA inner join Film f on f.numF =d.numF 
+where f.realisateur in (select numP from Personne where  nom ='Lelouch')
+and a.numA in (select numP from personne where  d.salaire in (select max (salaire )  from  Distribution where  numF=f.numF))
+group by d.numF,p.nom,p.prenom
+
+--26--
+select p.numP , p.nom,p.prenom from Personne p where P.numP  in
+(select  f.realisateur from film f inner join  Distribution D on d.numF=f.numF where  
+D.salaire = (select max(salaire) from Distribution where numF = f.numF) and f.salaire_real >= d.salaire)
+--27--
+create table RECOMPENSE (NUMR smallint primary key identity, CATEGORIE varchar(30) , FESTIVAL varchar(30))
+create table RECOMPENSE_FILM (NUMF smallint foreign key references Film(numF), ANNEE varchar(4) , NUMR smallint foreign key references RECOMPENSE (NUMR))
+create table RECOMPENSE_ACTEUR (NUMA smallint foreign key references Acteur(numA), NUMF smallint foreign key references Film(numF), ANNEE varchar(4) , NUMR smallint foreign key references RECOMPENSE(NUMR))
+
+insert into RECOMPENSE values( 'cenima','marackech' ),( 'cenima','angad' ),( 'anime','animlek' ),( 'comidie','fesTitwan' )
+insert into RECOMPENSE_FILM values (4,'2017',1),(1,'2017',2),(2,'2016',3),(3,'2018',4),
+(4,'2018',2),(1,'2017',4),(2,'2016',1),(7,'2018',2),(8,'2017',2),(7,'2016',3),(4,'2017',4)
+insert into RECOMPENSE_ACTEUR values (5,1,'2017',3),(4,4,'2017',1),(5,4,'2017',1),(3,4,'2017',1),(2,8,'2018',2),(4,8,'2018',2),(1,7,'2016',2),(4,7,'2016',3)
+--28--
+select f.titre from film f where f.numF in(select NUMF from RECOMPENSE_FILM group by NUMF having count(*)=1)
+
+select f.titre ,RA.NUMA from film f, RECOMPENSE_ACTEUR RA where f.numF in(select NUMF from RECOMPENSE_FILM) and RA.NUMF = f.numF
+--29--
+select * from cinema where numc in ( select distinct  numC from Passe p inner join RECOMPENSE_FILM RF on RF.NUMF = P.numF )
+--30--
+select f.titre from film f where f.numF in(select NUMF from RECOMPENSE_FILM group by NUMF having count(*)>=3)
+ 
+ -----------------Les curseurs--------------------------
+ --31--
+declare @Info_film table(Titre varchar(30) , NB_acteur smallint ,Budget int,Recettes int ,RevenueNet int )
+DECLARE cpi CURSOR FOR select F.numf,f.titre,p.prix,s.nbPlaces,f.budget from Film f 
+inner join Distribution d on d.numF = f.numF inner join Passe p on p.numF = f.numF inner join Salle s on s.numS =p.numS 
+declare @numf smallint , @titre varchar(30) ,@prix smallmoney,@nbPlaces smallint,@budget smallint
+declare @NB_acteur smallint,@Recettes int, @RevenueNet int,@numtest smallint,@numftest smallint,@budgetest int,@titretest varchar(30)
+			Open cpi
+			  FETCH NEXT FROM cpi INTO @numf,@titre,@prix,@nbPlaces,@budget
+			  set @Recettes =0
+			  set @numtest = @numf
+			  While @@FETCH_STATUS=0 
+			  begin
+				select @numtest = @numf ,@Recettes =@Recettes+(@nbPlaces/2*@prix),@numftest=@numf,@budgetest =@budget,@titretest=@titre
+				FETCH NEXT FROM cpi INTO @numf,@titre,@prix,@nbPlaces,@budget
+					if(@numtest<>@numf)
+					begin    
+					    set @NB_acteur = (select count(*) from Distribution where numf=@numftest)
+						set @RevenueNet=@Recettes-@budgetest
+						insert into @Info_film values(@titretest,@NB_acteur,@budgetest,@Recettes,@RevenueNet)
+						select @Recettes =0,@numtest = 0,@RevenueNet=0, @budget=0
+					end
+			  end
+			  set @RevenueNet=@Recettes-@budget
+			  set @NB_acteur = (select count(*) from Distribution where numf=@numf)
+			  insert into @Info_film values(@titre,@NB_acteur,@budget,@Recettes,@RevenueNet)
+			  Close cpi
+			  DEALLOCATE cpi
+			  select * from @Info_film
+----------------------------------------------------------------------------------------------------------------------------------------------------
+select distinct f1.titre,(select count(*)from Distribution where numF=f1.numF)as'NB_acteur',f1.budget,
+(select sum((s.nbPlaces/2)*p.prix ) from Passe p inner join salle s on s.numS=p.numS inner join Film f on f.numF=p.numF inner join Distribution d on d.numF = p.numF where p.numF=f1.numF) as 'Recettes',
+(select sum((s.nbPlaces/2)*p.prix ) from Passe p inner join salle s on s.numS=p.numS inner join Film f on f.numF=p.numF inner join Distribution d on d.numF = p.numF where p.numF=f1.numF)-f1.budget as'Rev'
+from Film f1 inner join Passe p on p.numF = f1.numF
+
+----------------Les déclencheurs-----------------------
+--39
+go
+alter trigger t1 
+on film instead of delete 
+as
+begin
+delete from Distribution where numF =(select numF from deleted)
+delete from Passe where numF =(select numF from deleted)
+delete from RECOMPENSE_FILM where numF =(select numF from deleted)
+delete from Film where numF =(select numF from deleted)
+end
+--40
+
+go
+alter trigger t2
+on RECOMPENSE_ACTEUR instead of insert 
+as
+begin
+declare @NUMA smallint = (select NUMA from inserted)
+declare @NUMF smallint = (select NUMF from inserted)
+declare @ANNEE varchar(4) =(select ANNEE from inserted)
+declare @NUMR smallint  =(select NUMR from inserted)
+insert into RECOMPENSE_FILM values (@NUMF,@ANNEE,@NUMR) 
+
+insert into RECOMPENSE_ACTEUR values (@NUMA,@NUMF,@ANNEE,@NUMR) 
+end
+--41
+go
+create trigger t3 
+on Distribution for insert ,update 
+as
+begin
+begin tran tr
+declare @f smallint= (select numF from inserted) 
+declare @sa smallmoney =(select sum (salaire )  from  Distribution where numF=@f )
+declare @b smallmoney= (select budget-realisateur  from  Film where numF=@f )
+if (@sa>@b)
+begin
+print 'asi mohamed rak ft lbudjet'
+rollback tran tr
+end
+else
+commit tran tr 
+end
+--42
+
+go
+select * from  Film
+select * from Passe
+
+go
+alter trigger t4 
+on Passe for insert,update
+as
+begin
+begin tran tr2
+
+declare @f smallint= (select numF from inserted) 
+declare @h time  = (select horaire from inserted) 
+declare @l smallint = (select logueur from Film where numF=@f)
+
+declare  @t time = dateadd(MINUTE,@l,@h) 
+if (@t>cast('23:00:00' as time))
+begin
+print ('n9s mn lfilm as7b wla rd mo serie' )
+rollback tran tr2
+end
+else
+ commit tran tr 
+end

@@ -1,0 +1,163 @@
+create table avion(
+av smallint identity primary key,
+marque varchar(50) not null,
+typeavion varchar(50)not null,
+capacite smallint not null,
+localisation varchar(50), 
+)
+
+create table pilote (
+pil smallint identity primary key ,
+nom varchar(20) not null,
+codepostal int not null,
+ville varchar(20) not null,
+datenaissance date ,
+datedebutactivite date,
+datefinactivite date ,
+salairebrut smallint not null,
+)
+
+create table passager (
+pas smallint identity primary key ,
+nom  varchar(20),
+prenom varchar(20),
+ville varchar(20),
+)
+
+create table vol(
+vo smallint identity primary key ,
+av smallint foreign key references avion(av),
+pil smallint foreign key references pilote(pil),
+villedepart varchar(20),
+villearrive varchar(20),
+heuredepart time,
+heurearrive time, 
+)
+
+alter table vol
+alter column heuredepart time(0) not null
+
+alter table vol
+alter column heurearrive time(0) not null
+
+create table affectation(
+pas smallint foreign key references passager(pas),
+vo smallint foreign key references vol(vo),
+datevole date,
+numplace smallint not null,
+prix smallint not null,
+)
+---------insertion des donnes --------------------
+-----avion -------
+insert into avion values ('airbus','a320','381','oujda')
+insert into avion values ('boeing','b747','401','rabat')
+insert into avion values ('boeing','b747','420','oujda')
+insert into avion values ('airbus','a340','400','tanger')
+insert into avion values ('airbus','a340','400','casa')
+insert into avion values ('airbus','a320','381','oujda')
+-----pilote-------
+insert into pilote values ('alami',60000,'oujda','1976-6-12','2000-9-17','',18000)
+insert into pilote values ('faraji',50008,'berkane','1986-2-3','2017-6-12','',15000)
+insert into pilote values ('damnati',678999,'rabat','1968-3-17','2008-7-5','',14000)
+insert into pilote values ('mohib',56000,'casa','1976-08-30','1972-05-15','',13000)
+insert into pilote values ('rachidi',60000,'oujda','1969-06-12','1976-06-12','',20000)
+insert into pilote values ('touzi',60000,'tanger','1981-07-07','1979-09-19','',22000)
+----- passager-------
+insert into passager values ('alami','karim','oujda')
+insert into passager values ('karzazi','fatiha','nador')
+insert into passager values ('motada','ahmed','oujda')
+insert into passager values ('mansour','karima','casa')
+insert into passager values ('al mansouri','rachid','tanger')
+insert into passager values ('mqami','khadija','oujda')
+-----vol----------------------------
+insert into vol values (1,2,'oujda','paris','08:00:00','10:00:00')
+insert into vol values (2,1,'casa','madrid','16:00:00','19:00:00')
+insert into vol values (1,1,'oujda','lyon','05:00:00','07:00:00')
+insert into vol values (3,4,'nador','paris','20:00:00','21:30:00')
+insert into vol values (3,2,'tanger','oujda','17:00:00','18:40:00')
+insert into vol values (4,3,'oujda','casa','07:00:00','09:15:00')
+
+insert into affectation values(1,1,'2017-10-15',17,300),(2,1,'2017-11-17',88,1500),(3,2,'2017-9-30',14,499),(3,4,'2018-2-1',9,1200),(4,2,'2017-2-14',74,2500)
+
+--************************************************************************************************************************--
+--1--
+select *from avion
+--2--
+select marque from avion
+--3--
+select * from avion where marque='airbus'
+--4--
+select * from avion where capacite > 100
+--5--
+select count(*) as 'Nombre avions' from avion 
+select av as "nombre de avions " from avion 
+--6--
+select *from vol where heuredepart >= '06:00:00' and  heuredepart <= '10:00:00'
+--7--
+select *from vol where villedepart = 'oujda' and villearrive = 'paris'
+--8--
+select nom from pilote where ville='oujda' or ville = 'berkane'
+--9--
+select nom from pilote where DATEDIFF(YEAR, datedebutactivite,datefinactivite) > 10
+--10--
+select nom from pilote where nom like 'al%'
+--11--
+select nom from pilote
+--12--
+select distinct marque from avion
+--13--
+select * from avion where capacite = (select min(capacite)from avion)
+--14--
+select * from avion where capacite = (select max(capacite)from avion)
+--15--
+select sum(salairebrut)as 'somme des salaires' from pilote
+--16--
+select marque,count(*)as 'nombe avion par marque' from avion group by marque
+--17--
+select marque,max(capacite) 'capacite maximal' from avion group by marque 
+--18--
+select count(*)as'nombre de passager',ville from passager group by ville
+--19--
+select nom from pilote order by nom asc
+--20--
+select *from avion order by capacite
+--21--
+select ville,count(*)as'nombre de pilote' from pilote where salairebrut>15000 group by ville
+--22--
+select * from pilote where nom like '_l%'
+
+
+--***************************************************************************************************************************************************************************************--
+
+
+--1--
+
+select nom from pilote p inner join vol v on p.pil=v.pil group by v.pil having  count(distinct v.av) =(select count(*) from Avion )
+
+select nom from pilote p where p.pil in ( select distinct v.pil from vol v group by v.pil having count(distinct v.av) = (select count(*) from Avion ))
+
+--2--
+select nom from vol inner join pilote on pilote.pil=vol.pil inner join avion on vol.av=avion.av where avion.marque='airbus'
+
+--3--
+
+select nom from pilote inner join vol on pilote.pil=vol.pil group by nom having count(distinct villearrive) = (select count(distinct villearrive)from vol)
+
+select nom from pilote p where p.pil in ( select distinct v.pil from vol v group by v.pil having count(distinct v.villearrive) = (select count(distinct villearrive)from vol) )
+
+--4--
+select p.pas , p.nom ,count(*)as 'nombre de vols' from passager p inner join affectation af on p.pas=af.pas group by p.pas , p.nom
+
+select p.nom , (select count (*) from affectation af where af.pas = p.pas ) as 'nombre de vols' from passager p
+--5--
+select nom+' '+prenom from passager inner join affectation on passager.pas=affectation.pas where prix>500
+--6--
+select nom+' '+prenom from affectation inner join  passager on passager.pas=affectation.pas inner join vol on affectation.vo=vol.vo where vol.villearrive='paris' and YEAR(datevole)=2018
+--7--
+select nom ,DATEDIFF(YEAR,datedebutactivite,datefinactivite)as'années d’expérience' from pilote
+
+select * ,DATEDIFF(YEAR,datedebutactivite,datefinactivite)as'années d’expérience' from pilote where DATEDIFF(YEAR,datedebutactivite,datefinactivite) = ( select max (DATEDIFF(YEAR,datedebutactivite,datefinactivite)) from pilote )
+--8--
+select avion.av from avion left join vol  on  avion.av=vol.av group by avion.av having  count(distinct vol.av) =0
+
+select * from avion where av not in (select distinct av from vol)
